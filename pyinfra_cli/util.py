@@ -179,21 +179,24 @@ def try_import_module_attribute(path, prefix=None, raise_for_none=True):
         else:
             if spec is not None:
                 module = import_module(possible)
-                break
+                if module is None:
+                    continue
 
+                attr = getattr(module, attr_name, None)
+                if attr is not None:
+                    return attr
+
+    # No valid module found
     if module is None:
         if raise_for_none:
             raise CliError(f"No such module: {possible_modules[0]}")
         return
+    
+    # Valid module, but could not get attributes
+    if raise_for_none:
+        raise CliError(f"No such attribute in module {possible_modules[0]}: {attr_name}")
 
-    attr = getattr(module, attr_name, None)
-    if attr is None:
-        if raise_for_none:
-            raise CliError(f"No such attribute in module {possible_modules[0]}: {attr_name}")
-        return
-
-    return attr
-
+    return
 
 def _parallel_load_hosts(state: "State", callback: Callable, name: str):
     def load_file(local_host):
